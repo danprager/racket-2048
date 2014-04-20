@@ -1,7 +1,7 @@
 2048 - Racket Edition
 =====================
 
-This is a clean-room, funcgtional implementation in Racket of the game 2048 by Gabriele Cirulli, based on 1024 by Veewo Studio, 
+This is a clean-room, functional implementation in Racket of the game 2048 by Gabriele Cirulli, based on 1024 by Veewo Studio, 
 and conceptually similar to Threes by Asher Vollmer.
 
 HOW TO PLAY: 
