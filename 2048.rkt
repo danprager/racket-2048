@@ -27,7 +27,7 @@
                     [down down-arrow]))
 
 
-(define *side* 4)          ; Side-length of the grid
+(define *side* 3)          ; Side-length of the grid
 (define *magnification* 2) ; Scales the game board
 
 (define (set-side! n)
