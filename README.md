@@ -1,10 +1,10 @@
 2048 - Racket Edition
 =====================
 
-This is a clean-room, functional implementation in Racket of the game ![2048](http://gabrielecirulli.github.io/2048/) 
+This is a clean-room, functional implementation in Racket of the game [2048](http://gabrielecirulli.github.io/2048/) 
 by Gabriele Cirulli, based on 1024 by Veewo Studio, cloned from the original iOS game
-![Threes](https://itunes.apple.com/us/app/threes!/id779157948?mt=8) by Asher Vollmer - 
-![development blog](http://asherv.com/threes/threemails/).
+[Threes](https://itunes.apple.com/us/app/threes!/id779157948?mt=8) by Asher Vollmer - 
+[development blog](http://asherv.com/threes/threemails/).
 
 HOW TO PLAY: 
 * Use your arrow keys to slide the tiles. 
