@@ -314,6 +314,20 @@
 (define *grid-side* (+ (* *side* *tile-side*)
                        (* (add1 *side*) *grid-spacing*)))
 
+;; Memoization - caching images takes the strain off the gc
+;;
+(define-syntax define-memoized
+  (syntax-rules ()
+    [(_ (f args ...) bodies ...)
+     (define f
+       (let ([results (make-hash)])
+         (lambda (args ...)
+           ((λ vals
+              (when (not (hash-has-key? results vals))
+                (hash-set! results vals (begin bodies ...)))
+              (hash-ref results vals))
+            args ...))))]))
+
 ;; Look-up the (i,j)th element in the flat representation.
 ;;
 (define (square/ij state i j)
@@ -352,7 +366,7 @@
          [side (max (image-width t) (image-height t))])
     (scale (if (> side *max-text-width*) (/ *max-text-width* side) 1) t)))
 
-(define (make-tile n)
+(define-memoized (make-tile n)
   (overlay
    (tile-text n)
    (plain-tile n)))
@@ -367,13 +381,20 @@
 
 ;; Make an image of the grid from the flat representation
 ;;
+(define *last-state* null) ; Cache the previous grid to avoid
+(define *last-grid* null)  ; senseless regeneration
+
 (define (state->image state)
-  (for*/fold ([im (square *grid-side* 'solid *grid-color*)])
-    ([i (in-range *side*)]
-     [j (in-range *side*)])
-    (place-tile/ij (make-tile (square/ij state i j))
-                   i j
-                   im)))
+  (unless (equal? state *last-state*)
+    (set! *last-grid*
+          (for*/fold ([im (square *grid-side* 'solid *grid-color*)])
+            ([i (in-range *side*)]
+             [j (in-range *side*)])
+            (place-tile/ij (make-tile (square/ij state i j))
+                           i j
+                           im)))
+    (set! *last-state* state))
+  *last-grid*)
 
 (define *empty-grid-image*
   (state->image (make-list (sqr *side*) 0)))
