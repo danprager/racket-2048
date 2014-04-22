@@ -161,14 +161,14 @@
 (define (reverse-moves moves n)
   (define (flip i) (- n i 1))
   (map (λ (m)
-         (match-let ([(list a b c) m])
-           (list a (flip b) (flip c))))
+         (match-define (list a b c) m)
+         (list a (flip b) (flip c)))
        moves))
 
 (define (transpose-moves moves)
   (for/list ([m moves])
-    (match-let ([(list v (list a b) (list c d)) m])
-      (list v (list b a) (list d c)))))
+    (match-define (list v (list a b) (list c d)) m)
+    (list v (list b a) (list d c))))
 
 (define (moves-row-right row [n *side*])
   (reverse-moves (moves-row-left (reverse row)) n))
@@ -181,8 +181,8 @@
 ;;
 (define (add-row-coord i rows)
   (for/list ([r rows])
-    (match-let ([(list a b c) r])
-      (list a (list i b) (list i c)))))
+    (match-define (list a b c) r)
+    (list a (list i b) (list i c))))
 
 (define (transpose lsts)
   (apply map list lsts))
@@ -238,8 +238,8 @@
 (define (moves-grid-rotate grid)
   (let ([n (length (first grid))])
     (for/list ([item (moves-grid-action grid moves-row-none)])
-      (match-let ([(list v (list i j) _) item])
-        (list v (list i j) (list j (- n i 1)))))))
+      (match-define (list v (list i j) _) item)
+      (list v (list i j) (list j (- n i 1))))))
 
 ;; Chop a list into a list of sub-lists of length n. Used to move from
 ;; a flat representation of the grid into a list of rows.
@@ -385,10 +385,10 @@
 (define (moves->frame moves k)
   (for*/fold ([grid *empty-grid-image*])
     ([m moves])
-    (match-let ([(list value (list i1 j1) (list i2 j2)) m])
-      (place-tile/ij (make-tile value)
-                     (interpolate k i1 i2) (interpolate k j1 j2)
-                     grid))))
+    (match-define (list value (list i1 j1) (list i2 j2)) m)
+    (place-tile/ij (make-tile value)
+                   (interpolate k i1 i2) (interpolate k j1 j2)
+                   grid)))
 
 ;; Animation of simultaneously moving tiles.
 ;;
@@ -424,8 +424,8 @@
 ;; no more moves are possible.
 ;;
 (define (game-over? w)
-  (match-let ([(world state score wt frames) w])
-    (and (null? frames) (finished? state))))
+  (match-define (world state score wt frames) w)
+  (and (null? frames) (finished? state)))
 
 ;; Given an arrow key return the operations to change the state and
 ;; produce the sliding animation.
@@ -489,25 +489,25 @@
 ;; If there are frames, show the next one. Otherwise show the steady state.
 ;;
 (define (show-world w)
+  (match-define (world state score wt frames) w)
   (scale *magnification*
-         (match-let ([(world state score wt frames) w])
-           (above/align 
-            'left
-            (if (null? frames)
-                (cond [(finished? state) (banner "Game over" state)]
-                      [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
-                      [else (state->image state)])
-                ((first frames)))
-            (rectangle 0 5 'solid 'white)
-            (text (format "Score: ~a" score) 16 'dimgray)))))
+         (above/align 
+          'left
+          (if (null? frames)
+              (cond [(finished? state) (banner "Game over" state)]
+                    [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
+                    [else (state->image state)])
+              ((first frames)))
+          (rectangle 0 5 'solid 'white)
+          (text (format "Score: ~a" score) 16 'dimgray))))
 
 ;; Move to the next frame in the animation.
 ;;
 (define (advance-frame w)
-  (match-let ([(world state score wt frames) w])
-    (if (null? frames)
-        w
-        (make-world state score wt (rest frames)))))
+  (match-define (world state score wt frames) w)
+  (if (null? frames)
+      w
+      (make-world state score wt (rest frames))))
 
 ;; Use this state to preview the appearance of all the tiles
 ;;
