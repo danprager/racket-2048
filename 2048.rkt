@@ -46,20 +46,38 @@
 (define *text-color* 'dimgray)
 (define *grid-color* 'slategray)
 
-(define *tile-colors*
-  '((0 lightgray)
-    (2 lightblue)
-    (4 lightgreen)
-    (8 plum)
-    (16 peachpuff)
-    (32 pink)
-    (64 lightyellow)
-    (128 paleturquoise)
-    (256 whitesmoke)
-    (512 mistyrose)
-    (1024 lavender)
-    (2048 turquoise)))
+;; Use the colors from
+;; https://github.com/gabrielecirulli/2048/blob/master/style/main.css
+(define *tile-bg-colors*
+  (map (lambda (x)
+         (match-define (list n r g b) x)
+         (list n (color r g b #xff)))
+       '((0 238 228 218)
+         (2 #xee #xe4 #xda)
+         (4 #xed #xe0 #xc8)
+         (8 #xf2 #xb1 #x79)
+         (16 #xf5 #x95 #x63)
+         (32 #xf6 #x7c #x5f)
+         (64 #xf6 #x5e #x3b)
+         (128 #xed #xcf #x72)
+         (256 #xed #xcc #x61)
+         (512 #xed #xc8 #x50)
+         (1024 #xed #xc5 #x3f)
+         (2048 #x3c #x3a #x32))))
 
+(define *tile-fg-colors*
+  '((0 dimgray)
+    (2 dimgray)
+    (4 dimgray)
+    (8 white)
+    (16 white)
+    (32 white)
+    (64 white)
+    (128 white)
+    (256 white)
+    (512 white)
+    (1024 white)
+    (2048 white)))
 
 ;;--------------------------------------------------------------------
 ;; Rows may be represented as lists, with 0s representing empty spots.
@@ -322,14 +340,14 @@
 (define (plain-tile n)
   (square *tile-side* 
           'solid 
-          (lookup n *tile-colors* *default-tile-color*)))
+          (lookup n *tile-bg-colors* *default-tile-color*)))
 
 ;; Make text for a tile
 ;;
 (define (tile-text n)
   (let* ([t (text (lookup n *text* (number->string n))
                   *text-size*
-                  *text-color*)]
+                  (lookup n *tile-fg-colors* *text-color*))]
          [side (max (image-width t) (image-height t))])
     (scale (if (> side *max-text-width*) (/ *max-text-width* side) 1) t)))
 
