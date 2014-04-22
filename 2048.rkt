@@ -5,7 +5,7 @@
 ;; Copyright 2014: Daniel Prager
 ;;                 daniel.a.prager@gmail.com
 ;;
-;; This is a clean-room, functional implementation in Racket 
+;; This is a largely clean-room, functional implementation in Racket 
 ;; of the game 2048 by Gabriele Cirulli, based on 1024 by Veewo Studio,
 ;; and conceptually similar to Threes by Asher Vollmer.
 ;;
@@ -27,7 +27,7 @@
                     [down down-arrow]))
 
 
-(define *side* 3)          ; Side-length of the grid
+(define *side* 4)          ; Side-length of the grid
 (define *magnification* 2) ; Scales the game board
 
 (define (set-side! n)
@@ -40,19 +40,20 @@
   '((0 "")
     (2 "2")))
 
-;; Color scheme
+;; Color scheme 
 ;;
-(define *default-tile-color* 'mintcream)
-(define *text-color* 'dimgray)
-(define *grid-color* 'slategray)
+;; From https://github.com/gabrielecirulli/2048/blob/master/style/main.css
+;;
+(define *grid-color* (color #xbb #xad #xa0))
 
-;; Use the colors from
-;; https://github.com/gabrielecirulli/2048/blob/master/style/main.css
+(define *default-tile-bg-color* (color #x3c #x3a #x32))
+(define *default-tile-fg-color* 'white)
+
 (define *tile-bg-colors*
   (map (lambda (x)
          (match-define (list n r g b) x)
-         (list n (color r g b #xff)))
-       '((0 238 228 218)
+         (list n (color r g b)))
+       '((0 #xcc #xc0 #xb3)
          (2 #xee #xe4 #xda)
          (4 #xed #xe0 #xc8)
          (8 #xf2 #xb1 #x79)
@@ -63,7 +64,7 @@
          (256 #xed #xcc #x61)
          (512 #xed #xc8 #x50)
          (1024 #xed #xc5 #x3f)
-         (2048 #x3c #x3a #x32))))
+         (2048 #xed #xc2 #x2e))))
 
 (define *tile-fg-colors*
   '((0 dimgray)
@@ -340,14 +341,14 @@
 (define (plain-tile n)
   (square *tile-side* 
           'solid 
-          (lookup n *tile-bg-colors* *default-tile-color*)))
+          (lookup n *tile-bg-colors* *default-tile-bg-color*)))
 
 ;; Make text for a tile
 ;;
 (define (tile-text n)
   (let* ([t (text (lookup n *text* (number->string n))
                   *text-size*
-                  (lookup n *tile-fg-colors* *text-color*))]
+                  (lookup n *tile-fg-colors* *default-tile-fg-color*))]
          [side (max (image-width t) (image-height t))])
     (scale (if (> side *max-text-width*) (/ *max-text-width* side) 1) t)))
 
@@ -511,7 +512,7 @@
 ;; Use this state to preview the appearance of all the tiles
 ;;
 (define (all-tiles-state)
-  (let ([all-tiles '(0 2 4 8 16 32 64 128 256 512 1024 1024 2048 4096)])
+  (let ([all-tiles '(0 2 4 8 16 32 64 128 256 512 1024 2048 4096)])
     (append all-tiles (make-list (- (sqr *side*) (length all-tiles)) 0))))
 
 ;; The event loop
