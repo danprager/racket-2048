@@ -27,8 +27,10 @@
                     [down down-arrow]))
 
 
-(define *side* 4)          ; Side-length of the grid
-(define *magnification* 2) ; Scales the game board
+(define *side* 4)              ; Side-length of the grid
+(define *magnification* 2)     ; Scales the game board
+(define *timelimit* #f)        ; no time limit, by default
+(define *tile-that-wins* 2048) ; you win when you get a tile = this number.
 
 (define (set-side! n)
   (set! *side* n))
@@ -439,14 +441,31 @@
 ;;
 ;; The Game
 ;;
-(define-struct world (state score winning-total frames) #:transparent)
+
+;; an image-procedure is a procedure of no arguments that produces an image
+
+;; a world contains:
+;; state is a ?
+;; score is a number
+;; winning-total is #f or a number, representing the final score <-- is this
+;;  necessary?
+;; frames is a (list-of image-procedure)
+;; start-time is a number, in seconds
+(define-struct world (state score winning-total frames start-time) #:transparent)
 
 ;; The game is over when any animations have been finished and 
 ;; no more moves are possible.
 ;;
+;; note that winning the game does *not* end the game.
+;;
 (define (game-over? w)
-  (match-define (world state score wt frames) w)
-  (and (null? frames) (finished? state)))
+  (match-define (world state score wt frames start-time) w)
+  (or (and (null? frames) (finished? state))
+      (out-of-time? (world-start-time w))))
+
+;; is the player out of time?
+(define (out-of-time? start-time)
+  (and *timelimit* (< (+ start-time *timelimit*) (current-seconds))))
 
 ;; Given an arrow key return the operations to change the state and
 ;; produce the sliding animation.
@@ -463,7 +482,7 @@
 ;;
 (define (change w a-key)
   (match-let ([(list op moves-op) (key->ops a-key)]
-              [(world st score wt frames) w])
+              [(world st score wt frames start-time) w])
     (cond [op
            (let* ([grid (chop st)]
                   [slide-state (flatten (op grid))])
@@ -478,21 +497,25 @@
                                (+ score (score-increment 
                                          (if horizontal? grid (transpose grid))))
                                (cond [wt wt]
-                                     [(won-game? new-state) (apply + (flatten new-state))]
+                                     [(won-game? new-state) 
+                                      (apply + (flatten new-state))]
                                      [else #f])
                                (append frames
                                        (animate-moving-tiles st moves-op)
-                                       (animate-appearing-tile slide-state value index))))))]
+                                       (animate-appearing-tile slide-state value index))
+                               start-time))))]
           [(key=? a-key " ")             ; rotate the board
            (make-world ((compose flatten transpose reverse) (chop st))
-                       score wt (append frames
-                                        (animate-moving-tiles st moves-grid-rotate)))] 
+                       score wt
+                       (append frames
+                               (animate-moving-tiles st moves-grid-rotate))
+                       start-time)] 
           [else w])))                    ; unrecognised key - no effect
 
 ;; Are we there yet?
 ;;
 (define (won-game? state)
-  (= (apply max state) 2048))
+  (= (apply max state) *tile-that-wins*))
 
 ;; Banner overlay text: e.g. You won! / Game Over
 ;;
@@ -510,12 +533,16 @@
 ;; If there are frames, show the next one. Otherwise show the steady state.
 ;;
 (define (show-world w)
-  (match-define (world state score wt frames) w)
+  (match-define (world state score wt frames start-time) w)
   (scale *magnification*
          (above/align 
           'left
           (if (null? frames)
               (cond [(finished? state) (banner "Game over" state)]
+                    [(out-of-time? start-time) (banner "Out of Time" state)]
+                    ;;> I'm baffled by the use of wt here. Why not 
+                    ;;> just use won-game? Or is this just a roundabout
+                    ;;> way to get the banner to disappear again?
                     [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
                     [else (state->image state)])
               ((first frames)))
@@ -525,10 +552,10 @@
 ;; Move to the next frame in the animation.
 ;;
 (define (advance-frame w)
-  (match-define (world state score wt frames) w)
+  (match-define (world state score wt frames start-time) w)
   (if (null? frames)
       w
-      (make-world state score wt (rest frames))))
+      (make-world state score wt (rest frames) start-time)))
 
 ;; Use this state to preview the appearance of all the tiles
 ;;
@@ -541,7 +568,7 @@
 (define (start)
   (big-bang (make-world (initial-state) 
                         ;(all-tiles-state) 
-                        0 #f null)
+                        0 #f null (current-seconds))
             (to-draw show-world)
             (on-key change)
             (on-tick advance-frame 0.01)
