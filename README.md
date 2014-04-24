@@ -8,16 +8,17 @@ cloned from the original iOS game [Threes](https://itunes.apple.com/us/app/three
 HOW TO PLAY: 
 * Use the arrow keys to slide the tiles. 
 * When two tiles with the same number touch, they merge into one!
-* Use the SPACE key to rotate the board.
 
 One of the nice things about 2048 is how many creative variations have been devised. 
 
 What can the Racket community do with it?
 
 
-Dan 
-
--- 
-daniel.a.prager@gmail.com
+Dan <daniel.a.prager@gmail.com>
 
 
+Enhancements
+============
+* Use the SPACE key to rotate the board.
+* Choose a different grid-size (*side* in the code)
+* Time elapsed or Time remaining (*time-limit* in the code)
