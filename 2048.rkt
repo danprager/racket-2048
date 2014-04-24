@@ -488,7 +488,8 @@
 (define (change w a-key)
   (match-let ([(list op moves-op) (key->ops a-key)]
               [(world st score wt frames start-time) w])
-    (cond [op
+    (cond [(out-of-time? start-time) w] ; Stop accepting key-presses 
+          [op
            (let* ([grid (chop st)]
                   [slide-state (flatten (op grid))])
              (if (equal? slide-state st)
