@@ -28,9 +28,10 @@
 
 
 (define *side* 4)              ; Side-length of the grid
+(define *time-limit* 5)        ; Use #f for no time limit, or number of seconds
+
+(define *tile-that-wins* 2048) ; You win when you get a tile = this number
 (define *magnification* 2)     ; Scales the game board
-(define *timelimit* #f)        ; no time limit, by default
-(define *tile-that-wins* 2048) ; you win when you get a tile = this number.
 
 (define (set-side! n)
   (set! *side* n))
@@ -460,12 +461,13 @@
 ;;
 (define (game-over? w)
   (match-define (world state score wt frames start-time) w)
-  (or (and (null? frames) (finished? state))
-      (out-of-time? (world-start-time w))))
+  (and (null? frames) ; Finish animations to reach final state and show the banner
+       (or (finished? state)
+           (out-of-time? (world-start-time w)))))
 
-;; is the player out of time?
+;; Is the player out of time?
 (define (out-of-time? start-time)
-  (and *timelimit* (< (+ start-time *timelimit*) (current-seconds))))
+  (and *time-limit* (< (+ start-time *time-limit*) (current-seconds))))
 
 ;; Given an arrow key return the operations to change the state and
 ;; produce the sliding animation.
@@ -528,26 +530,51 @@
                 'solid 'white)
      (state->image state))))
 
+(define (number->time-string s)
+  (define mins (quotient s 60))
+  (define secs (remainder s 60))
+  (format "~a:~a" 
+          mins
+          (cond [(<= secs 0) "00"]
+                [(<= secs 9) (format "0~a" secs)]
+                [else (remainder secs 60)])))
+
+(define (time-remaining start)
+  (number->time-string (+ *time-limit* start (- (current-seconds)))))
+
+(define (time-elapsed start)
+  (number->time-string (- (current-seconds) start)))
+
 ;; Display the grid with score below.
 ;;
 ;; If there are frames, show the next one. Otherwise show the steady state.
 ;;
 (define (show-world w)
   (match-define (world state score wt frames start-time) w)
-  (scale *magnification*
-         (above/align 
-          'left
-          (if (null? frames)
-              (cond [(finished? state) (banner "Game over" state)]
-                    [(out-of-time? start-time) (banner "Out of Time" state)]
-                    ;;> I'm baffled by the use of wt here. Why not 
-                    ;;> just use won-game? Or is this just a roundabout
-                    ;;> way to get the banner to disappear again?
-                    [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
-                    [else (state->image state)])
-              ((first frames)))
-          (rectangle 0 5 'solid 'white)
-          (text (format "Score: ~a" score) 16 'dimgray))))
+  (let ([board (if (null? frames)
+                   (cond [(finished? state) (banner "Game over" state)]
+                         [(out-of-time? start-time) (banner "Out of Time" state)]
+                         
+                         ;; Q: Why wt (i.e. winning-total) rather than won-game? 
+                         ;; A: wt allows the keen player to continue playing...
+                         [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
+                         [else (state->image state)])
+                   ((first frames)))]
+        [score-text (text (format "Score: ~a" score) 16 'dimgray)]
+        [time-text (text (format "Time: ~a"
+                                 ((if *time-limit* time-remaining time-elapsed)
+                                  start-time))
+                         16 'gray)])
+    (scale *magnification*
+           (above
+            board
+            (rectangle 0 5 'solid 'white)
+            (beside
+             score-text
+             (rectangle (- (image-width board)
+                           (image-width score-text)
+                           (image-width time-text)) 0 'solid 'white)
+             time-text)))))
 
 ;; Move to the next frame in the animation.
 ;;
