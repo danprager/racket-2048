@@ -28,7 +28,7 @@
 
 
 (define *side* 4)              ; Side-length of the grid
-(define *time-limit* 5)        ; Use #f for no time limit, or number of seconds
+(define *time-limit* #f)       ; Use #f for no time limit, or number of seconds
 
 (define *tile-that-wins* 2048) ; You win when you get a tile = this number
 (define *magnification* 2)     ; Scales the game board
