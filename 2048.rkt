@@ -745,13 +745,14 @@
   
   (let* ([initial (initial-state)]
          [initial-sum (apply + initial)]
-         [largest-3 (take (sort (initial-state) >) 3)])
+         [largest-3 (take (sort initial >) 3)])
     (check-equal? (length initial) 16)
     (check-true (or (= initial-sum 4)
                     (= initial-sum 6)
                     (= initial-sum 8)))
     (check-true (or (equal? largest-3  '(2 2 0))
-                    (equal? largest-3  '(4 2 0)))))
+                    (equal? largest-3  '(4 2 0))
+                    (equal? largest-3  '(4 4 0)))))
   
   (check-equal? (count-zeros '(1 0 1 0 0 0 1)) 4)
   (check-equal? (count-zeros '(1 1)) 0)
