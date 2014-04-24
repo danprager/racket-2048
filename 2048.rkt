@@ -30,6 +30,9 @@
 (define *side* 4)              ; Side-length of the grid
 (define *time-limit* #f)       ; Use #f for no time limit, or number of seconds
 
+(define *amber-alert* 60)      ; Time indicator goes orange when less than this number of seconds remaining
+(define *red-alert* 10)        ; Time indicator goes red when less than this number of seconds remaining
+
 (define *tile-that-wins* 2048) ; You win when you get a tile = this number
 (define *magnification* 2)     ; Scales the game board
 
@@ -519,10 +522,10 @@
 (define (won-game? state)
   (= (apply max state) *tile-that-wins*))
 
-;; Banner overlay text: e.g. You won! / Game Over
+;; Banner overlay text: e.g. You won! / Game Over, etc.
 ;;
-(define (banner txt state)
-  (let ([b-text (text txt 30 'black)])
+(define (banner txt state [color 'black])
+  (let ([b-text (text txt 30 color)])
     (overlay
      b-text
      (rectangle (* 1.2 (image-width b-text))
@@ -530,6 +533,8 @@
                 'solid 'white)
      (state->image state))))
 
+;; Convert number of seconnds to "m:ss" format
+;;
 (define (number->time-string s)
   (define mins (quotient s 60))
   (define secs (remainder s 60))
@@ -540,10 +545,10 @@
                 [else (remainder secs 60)])))
 
 (define (time-remaining start)
-  (number->time-string (+ *time-limit* start (- (current-seconds)))))
+  (+ *time-limit* start (- (current-seconds))))
 
 (define (time-elapsed start)
-  (number->time-string (- (current-seconds) start)))
+  (- (current-seconds) start))
 
 ;; Display the grid with score below.
 ;;
@@ -551,20 +556,23 @@
 ;;
 (define (show-world w)
   (match-define (world state score wt frames start-time) w)
-  (let ([board (if (null? frames)
-                   (cond [(finished? state) (banner "Game over" state)]
-                         [(out-of-time? start-time) (banner "Out of Time" state)]
-                         
-                         ;; Q: Why wt (i.e. winning-total) rather than won-game? 
-                         ;; A: wt allows the keen player to continue playing...
-                         [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
-                         [else (state->image state)])
-                   ((first frames)))]
-        [score-text (text (format "Score: ~a" score) 16 'dimgray)]
-        [time-text (text (format "Time: ~a"
-                                 ((if *time-limit* time-remaining time-elapsed)
-                                  start-time))
-                         16 'gray)])
+  (let* ([board (if (null? frames)
+                    (cond [(finished? state) (banner "Game over" state)]
+                          [(out-of-time? start-time) (banner "Out of Time" state 'red)]
+                          
+                          ;; Q: Why wt (i.e. winning-total) rather than won-game? 
+                          ;; A: wt allows the keen player to continue playing...
+                          [(equal? (apply + (flatten state)) wt) (banner "You won!" state)]
+                          [else (state->image state)])
+                    ((first frames)))]
+         [score-text (text (format "Score: ~a" score) 16 'dimgray)]
+         [seconds ((if *time-limit* time-remaining time-elapsed) start-time)]
+         [time-text (text (format "Time: ~a" 
+                                  (number->time-string seconds)) 
+                          16
+                          (cond [(or (> seconds *amber-alert*) (not *time-limit*)) 'gray]
+                                [(> seconds *red-alert*) 'orange] 
+                                [else 'red]))])        
     (scale *magnification*
            (above
             board
