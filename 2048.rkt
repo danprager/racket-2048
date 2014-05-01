@@ -534,17 +534,20 @@
                 'solid 'white)
      (state->image state))))
 
-;; Convert number of seconnds to "m:ss" format
+;; Convert number of seconds to "h:mm:ss" or "m:ss" format
 ;;
 (define (number->time-string s)
-  (define mins (quotient s 60))
+  (define hrs (quotient s 3600))
+  (define mins (quotient (remainder s 3600) 60))
   (define secs (remainder s 60))
-  (format "~a:~a" 
-          mins
-          (cond [(<= secs 0) "00"]
-                [(<= secs 9) (format "0~a" secs)]
-                [else (remainder secs 60)])))
-
+  (define (xx n)
+    (cond [(<= n 0) "00"]
+          [(<= n 9) (format "0~a" n)]
+          [else (remainder n 60)]))
+  (if (>= s 3600)
+      (format "~a:~a:~a" hrs (xx mins) (xx secs))
+      (format "~a:~a" mins (xx secs))))
+      
 (define (time-remaining start)
   (+ *time-limit* start (- (current-seconds))))
 
